@@ -3,28 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galaxy Love by MONCEF</title>
-
-     <!-- 
-
-Contáctame:
-
-    * Invitame un café
- https://buymeacoffee.com/alexx.dev
-
-    * Portafolio Web
- https://alexxdev.vercel.app
-
-    * Sigueme en tiktok
- https://www.tiktok.com/@alexx.dev?is_from_webapp=1&sender_device=pc 
- 
-    *Canal de WhatsApp
- https://whatsapp.com/channel/0029VazQEXq90x2vIdNkrH1p
-
- 
- WhatsApp: +52 1 55 6628 1018
-
--->
+    <title>Galaxy Love by LuffyDz</title> 
+    
     
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: url('love.png'), auto !important;}
@@ -312,56 +292,50 @@ Contáctame:
             {
                 "name": "I loooveeee youuuu",
                 "message": "If I could choose a safe place, it would be by your side ❤️❤️❤️",
-                "src": "https://ik.imagekit.io/moncef/IMG_7473.jpeg?updatedAt=1794407976947",
+                "src": "3.png",
                 "hue": 355, 
                 "pattern": "heart"
             },
             {
                 "name": "For you",
                 "message": "For you, who makes my heart beat in a unique way. You are in every memory and every heartbeat.",
-                "src": "https://ik.imagekit.io/moncef/IMG_7472.jpeg?updatedAt=1794408001091",
                 "hue": 0,
                 "pattern": "heart"
             },
             {
                 "name": "Under the Stars",
                 "message": "That night I looked at the sky, and I realized that no star shines as brightly as your eyes.",
-                "src": "https://ik.imagekit.io/moncef/IMG_7475.jpeg?updatedAt=1794407995087",
                 "hue": 350,
                 "pattern": "heart"
             },
             {
                 "name": "Forever",
                 "message": "No matter how many lifetimes I live, I will choose you in every single one. Forever and always.",
-                "src": "https://ik.imagekit.io/moncef/IMG_7469.jpeg?updatedAt=1794407980337",
                 "hue": 358,
                 "pattern": "heart"
             },
             {
                 "name": "Adventures together",
                 "message": "There is nowhere else on earth I'd rather be than exploring the world right by your side.",
-                "src": "https://ik.imagekit.io/moncef/IMG_7476.jpeg?updatedAt=1794407974273",
                 "hue": 355,
                 "pattern": "heart"
             },
             {
                 "name": "Our First Kiss",
                 "message": "The moment our lips met, the whole universe held its breath. Ever since, every kiss from you has been my favorite galaxy.",
-                "src": "https://ik.imagekit.io/moncef/IMG_7470.jpeg?updatedAt=1794407961818",
                 "hue": 0,
                 "pattern": "heart"
             },
             {
                 "name": "Love of my Life",
                 "message": "The longer we're together, the more I love you.",
-                "src": "https://ik.imagekit.io/moncef/IMG_7471.jpeg?updatedAt=1794407907017",
+                "src": "5.png",
                 "hue": 350,
                 "pattern": "heart"
             },
             {
                 "name": "You are my safe haven",
                 "message": "Whenever the world gets too loud, just one look at you brings me peace.",
-                "src": "https://ik.imagekit.io/moncef/IMG_7476.jpeg?updatedAt=1794407974273",
                 "hue": 358,
                 "pattern": "heart"
             }
@@ -476,46 +450,150 @@ Contáctame:
         let geometry = null, material = null, points = null;
         let jetGeometry = null, jetMaterial = null, jetPoints = null;
         let jetVelocities = [];
-        let blackHoleMesh = null, accretionMesh = null, accretionMeshHalo = null, accretionPoints = null;
+        let blackHoleGroup = null, blackHoleMesh = null, accretionDisc = null, photonRing = null, accretionGlow = null, accretionPoints = null;
         let hyperspaceGroup = null, hyperspaceRings = [], hyperspaceSpeed = 0.18;
 
+        // ── Textures procédurales du trou noir ──
+        const makeAccretionTexture = (size = 1024) => {
+            const cvs = document.createElement('canvas');
+            cvs.width = cvs.height = size;
+            const ctx = cvs.getContext('2d');
+            const c = size / 2, R = size / 2;
+
+            // anneau de base : blanc chaud → orange → rouge sombre → transparent
+            const base = ctx.createRadialGradient(c, c, R * 0.30, c, c, R);
+            base.addColorStop(0.00, 'rgba(255, 246, 232, 0.00)');
+            base.addColorStop(0.05, 'rgba(255, 244, 226, 0.95)');
+            base.addColorStop(0.13, 'rgba(255, 205, 140, 0.92)');
+            base.addColorStop(0.26, 'rgba(255, 130, 55, 0.80)');
+            base.addColorStop(0.44, 'rgba(235, 55, 45, 0.52)');
+            base.addColorStop(0.68, 'rgba(150, 10, 45, 0.26)');
+            base.addColorStop(0.88, 'rgba(80, 0, 30, 0.08)');
+            base.addColorStop(1.00, 'rgba(60, 0, 25, 0.00)');
+            ctx.fillStyle = base;
+            ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.fill();
+
+            // filaments spiraux : la matière qui tourbillonne
+            ctx.globalCompositeOperation = 'lighter';
+            const rng = mulberry32(9137);
+            for (let i = 0; i < 460; i++) {
+                const r0 = (0.30 + rng() * 0.62) * R;
+                const start = rng() * Math.PI * 2;
+                const span = 0.4 + rng() * 2.8;
+                const heat = 1 - ((r0 / R - 0.30) / 0.62);
+                const alpha = 0.025 + rng() * 0.10;
+                ctx.strokeStyle = heat > 0.6
+                    ? `rgba(255, 238, 210, ${alpha})`
+                    : heat > 0.3
+                        ? `rgba(255, 140, 70, ${alpha})`
+                        : `rgba(205, 35, 60, ${alpha})`;
+                ctx.lineWidth = 0.6 + rng() * 2.2;
+                ctx.beginPath();
+                const steps = 28;
+                for (let s = 0; s <= steps; s++) {
+                    const k = s / steps;
+                    const ang = start + k * span;
+                    const rr = r0 + k * R * 0.035;
+                    const x = c + Math.cos(ang) * rr, y = c + Math.sin(ang) * rr;
+                    if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // beaming relativiste : un côté du disque plus lumineux
+            const beam = ctx.createLinearGradient(c - R, c, c + R, c);
+            beam.addColorStop(0.00, 'rgba(255, 215, 180, 0.24)');
+            beam.addColorStop(0.45, 'rgba(255, 215, 180, 0.00)');
+            beam.addColorStop(1.00, 'rgba(0, 0, 0, 0.00)');
+            ctx.fillStyle = beam;
+            ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.anisotropy = 8;
+            return tex;
+        };
+
+        const makeGlowTexture = (size = 256) => {
+            const cvs = document.createElement('canvas');
+            cvs.width = cvs.height = size;
+            const ctx = cvs.getContext('2d');
+            const c = size / 2;
+            const g = ctx.createRadialGradient(c, c, 0, c, c, c);
+            g.addColorStop(0.00, 'rgba(255, 224, 195, 0.85)');
+            g.addColorStop(0.18, 'rgba(255, 140, 90, 0.42)');
+            g.addColorStop(0.45, 'rgba(220, 40, 60, 0.15)');
+            g.addColorStop(0.75, 'rgba(120, 0, 40, 0.05)');
+            g.addColorStop(1.00, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, size, size);
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.anisotropy = 4;
+            return tex;
+        };
+
         const generateBlackHole = () => {
-            const bhGeometry = new THREE.SphereGeometry(0.3, 64, 64);
-            blackHoleMesh = new THREE.Mesh(bhGeometry, new THREE.MeshBasicMaterial({ color: 0x000000 }));
-            scene.add(blackHoleMesh);
+            blackHoleGroup = new THREE.Group();
+            scene.add(blackHoleGroup);
 
-            accretionMesh = new THREE.Mesh(
-                new THREE.RingGeometry(0.35, 0.85, 64, 8),
-                new THREE.MeshBasicMaterial({ color: 0xff3300, side: THREE.DoubleSide, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending })
+            // horizon des événements
+            blackHoleMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.3, 64, 64),
+                new THREE.MeshBasicMaterial({ color: 0x050006 })
             );
-            accretionMesh.rotation.x = Math.PI / 2;
-            scene.add(accretionMesh);
+            blackHoleGroup.add(blackHoleMesh);
 
-            accretionMeshHalo = new THREE.Mesh(
-                new THREE.RingGeometry(0.32, 0.55, 64, 8),
-                new THREE.MeshBasicMaterial({ color: 0xff0022, side: THREE.DoubleSide, transparent: true, opacity: 0.48, blending: THREE.AdditiveBlending })
+            // halo de lentille gravitationnelle (derrière l'horizon)
+            accretionGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: makeGlowTexture(), color: 0xff8a5c, transparent: true,
+                blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.55
+            }));
+            accretionGlow.scale.setScalar(2.9);
+            accretionGlow.position.y = 0.02;
+            blackHoleGroup.add(accretionGlow);
+
+            // disque d'accrétion texturé, fin et lumineux sur le bord interne
+            accretionDisc = new THREE.Mesh(
+                new THREE.CircleGeometry(1.15, 160),
+                new THREE.MeshBasicMaterial({
+                    map: makeAccretionTexture(1024), transparent: true, side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.95, toneMapped: false
+                })
             );
-            accretionMeshHalo.rotation.y = Math.PI / 3;
-            scene.add(accretionMeshHalo);
+            accretionDisc.rotation.x = -Math.PI / 2;
+            accretionDisc.position.y = 0.01;
+            blackHoleGroup.add(accretionDisc);
 
+            // anneau de photons : trait fin blanc-chaud
+            photonRing = new THREE.Mesh(
+                new THREE.RingGeometry(0.305, 0.332, 160),
+                new THREE.MeshBasicMaterial({
+                    color: 0xfff2e4, transparent: true, opacity: 0.9,
+                    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+                })
+            );
+            photonRing.rotation.x = -Math.PI / 2;
+            photonRing.position.y = 0.015;
+            blackHoleGroup.add(photonRing);
+
+            // poussière qui orbite dans le disque
             const accParticlesCount = 6000;
             const accGeo = new THREE.BufferGeometry();
             const accPos = new Float32Array(accParticlesCount * 3);
             const accCol = new Float32Array(accParticlesCount * 3);
-            const baseColor = new THREE.Color(0xff4422);
             for (let i = 0; i < accParticlesCount; i++) {
                 const i3 = i * 3;
-                const r = 0.32 + Math.random() * 0.45;
+                const r = 0.33 + Math.random() * 0.72;
                 const angle = Math.random() * Math.PI * 2;
-                accPos[i3] = Math.cos(angle) * r; accPos[i3+1] = (Math.random()-0.5)*0.02; accPos[i3+2] = Math.sin(angle) * r;
-                const heat = 1 - ((r - 0.32) / 0.45);
-                const pColor = baseColor.clone(); pColor.offsetHSL(0, 0, heat * 0.5);
+                accPos[i3] = Math.cos(angle) * r; accPos[i3+1] = (Math.random() - 0.5) * 0.015; accPos[i3+2] = Math.sin(angle) * r;
+                const heat = 1 - ((r - 0.33) / 0.72);
+                const pColor = new THREE.Color().setHSL(0.09 * heat, 0.95, 0.32 + heat * 0.48);
                 accCol[i3] = pColor.r; accCol[i3+1] = pColor.g; accCol[i3+2] = pColor.b;
             }
             accGeo.setAttribute('position', new THREE.BufferAttribute(accPos, 3));
             accGeo.setAttribute('color', new THREE.BufferAttribute(accCol, 3));
-            accretionPoints = new THREE.Points(accGeo, new THREE.PointsMaterial({ map: new THREE.TextureLoader().load('love.png'), transparent: true, size: 0.02, vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-            scene.add(accretionPoints);
+            accretionPoints = new THREE.Points(accGeo, new THREE.PointsMaterial({ map: new THREE.TextureLoader().load('love.png'), transparent: true, size: 0.022, vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+            blackHoleGroup.add(accretionPoints);
         };
 
         const generateGalaxy = () => {
@@ -734,7 +812,8 @@ Contáctame:
         });
 
         if (points) points.visible = false;
-        [accretionMesh, accretionMeshHalo, accretionPoints, blackHoleMesh, jetPoints].forEach(o => { if (o) o.visible = false; });
+        if (blackHoleGroup) blackHoleGroup.visible = false;
+        if (jetPoints) jetPoints.visible = false;
         if (hyperspaceGroup) hyperspaceGroup.visible = true;
         plateMeshes.forEach(d => { d.mesh.visible = false; d.mesh.scale.set(0.001,0.001,0.001); });
         textMeshes.forEach(tx => { tx.mesh.visible = false; tx.mesh.scale.set(0.001,0.001,0.001); });
@@ -785,10 +864,10 @@ Contáctame:
                 });
             }
 
-            if (t > 0.8 && blackHoleMesh) {
-                blackHoleMesh.visible = accretionMesh.visible = accretionMeshHalo.visible = accretionPoints.visible = true;
+            if (t > 0.8 && blackHoleGroup) {
+                blackHoleGroup.visible = true;
                 const s = easeOutBack(Math.min(1, (t - 0.8) / 2.2));
-                [blackHoleMesh, accretionMesh, accretionMeshHalo, accretionPoints].forEach(o => o.scale.setScalar(s));
+                blackHoleGroup.scale.setScalar(s);
             }
             if (t > 2.5 && points) {
                 points.visible = true;
@@ -850,9 +929,13 @@ Contáctame:
                 }
             });
 
-            if (accretionPoints?.visible) accretionPoints.rotation.y = t * 2.0;
-            if (accretionMesh?.visible)   accretionMesh.rotation.z   = t * 1.5;
-            if (accretionMeshHalo?.visible) accretionMeshHalo.rotation.z = -t * 0.5;
+            if (blackHoleGroup?.visible) {
+                blackHoleGroup.rotation.y = t * 0.12;
+                accretionDisc.rotation.z = -t * 0.10;
+                accretionPoints.rotation.y = t * 0.22;
+                accretionGlow.material.opacity = 0.50 + Math.sin(t * 1.6) * 0.07;
+                photonRing.material.opacity = 0.82 + Math.sin(t * 2.1) * 0.08;
+            }
 
             if (jetPoints?.visible) {
                 const colArr = jetPoints.geometry.attributes.color.array;
@@ -1019,26 +1102,5 @@ Contáctame:
             });
         })();
     </script>
-</body>
-
- <!-- 
-
-Contáctame:
-
-    * Invitame un café
- https://buymeacoffee.com/alexx.dev
-
-    * Portafolio Web
- https://alexxdev.vercel.app
-
-    * Sigueme en tiktok
- https://www.tiktok.com/@alexx.dev?is_from_webapp=1&sender_device=pc 
- 
-    *Canal de WhatsApp
- https://whatsapp.com/channel/0029VazQEXq90x2vIdNkrH1p
-
- 
- WhatsApp: +52 1 55 6628 1018
-
--->
-</html>
+</body> 
+</html> 
